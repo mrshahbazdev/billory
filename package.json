@@ -1,0 +1,82 @@
+{
+  "name": "billory",
+  "productName": "Billory",
+  "description": "Offline invoicing for freelancers — invoice clients abroad, track what's unpaid, export clean PDFs. No account, no subscription.",
+  "author": {
+    "name": "Muhammad Shahbaz",
+    "email": "mrshahbaznns@gmail.com"
+  },
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"cross-env BROWSER=none npm run react:dev\" \"npm run electron:dev\"",
+    "react:dev": "vite",
+    "electron:dev": "wait-on tcp:5173 && electron .",
+    "build": "vite build",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.shahbaz.billory",
+    "productName": "Billory",
+    "copyright": "Copyright © 2026 Muhammad Shahbaz",
+    "asar": true,
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "appx",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "appx": {
+      "applicationId": "Billory",
+      "displayName": "Billory",
+      "identityName": "FROM_PARTNER_CENTER",
+      "publisher": "CN=FROM_PARTNER_CENTER",
+      "publisherDisplayName": "FROM_PARTNER_CENTER",
+      "backgroundColor": "#0f172a",
+      "languages": ["en-US"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "vite": "^5.4.0",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
