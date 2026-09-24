@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { docTotals, paidMinor, docStatus, fmt, toMinor, parseAmount, CURRENCIES } from '../lib/money.js';
+import { docTotals, paidMinorDetailed, docStatus, fmt, toMinor, parseAmount, CURRENCIES } from '../lib/money.js';
 import { newLine, newPayment, issueDocument, clientOf, businessOf, uid } from '../lib/model.js';
 import { docBlocks, cssFor } from '../lib/invoiceHtml.js';
 import { measureBlocks, packPages, fitBlocks, contentHeight, contentWidth, A4 } from '../lib/paginate.js';
@@ -12,7 +12,8 @@ export default function DocEditor({ store, doc, update, close }) {
   const [pay, setPay] = useState(() => ({ ...newPayment(doc.id) }));
 
   const totals = useMemo(() => docTotals(doc, store.taxRates), [doc, store.taxRates]);
-  const paid = paidMinor(doc, store.payments);
+  const paidDetail = paidMinorDetailed(doc, store.payments);
+  const paid = paidDetail.totalMinor;
   const bal = totals.totalDueMinor - paid;
   const st = docStatus(doc, store.payments, store.taxRates);
   const payments = store.payments.filter(p => p.documentId === doc.id);
@@ -82,13 +83,19 @@ export default function DocEditor({ store, doc, update, close }) {
           <div className="paybox">
             <div className="frow">
               <label>Date <input className="in" type="date" value={pay.date} onChange={e => setPay({ ...pay, date: e.target.value })} /></label>
-              <label>Amount <input className="in" value={pay.amountMinor ? (pay.amountMinor / 100) : ''} placeholder={fmt(bal, doc.currency, { symbol: false })} onChange={e => setPay({ ...pay, amountMinor: parseAmount(e.target.value, doc.currency) ?? pay.amountMinor })} /></label>
+              <label>Amount <input className="in" value={pay.amountMinor ? (pay.amountMinor / 100) : ''} placeholder={fmt(bal, doc.currency, { symbol: false })} onChange={e => setPay({ ...pay, amountMinor: parseAmount(e.target.value, pay.currency || doc.currency) ?? pay.amountMinor })} /></label>
+              <label>Currency
+                <select className="in" value={pay.currency || doc.currency} onChange={e => setPay({ ...pay, currency: e.target.value })}>
+                  {Object.keys(CURRENCIES).map(k => <option key={k} value={k}>{k}</option>)}
+                </select></label>
               <label>Method <input className="in" value={pay.method} onChange={e => setPay({ ...pay, method: e.target.value })} /></label>
               <label>Reference <input className="in" value={pay.reference} onChange={e => setPay({ ...pay, reference: e.target.value })} /></label>
-              <label>FX rate <input className="in" value={pay.fxRate} placeholder="received rate" onChange={e => setPay({ ...pay, fxRate: e.target.value })} /></label>
+              {(pay.currency || doc.currency) !== doc.currency &&
+                <label>Rate <input className="in" value={pay.fxRate} placeholder={`1 ${pay.currency} = ? ${doc.currency}`} onChange={e => setPay({ ...pay, fxRate: e.target.value })} /></label>}
               <button className="btn" onClick={addPayment}>Add</button>
             </div>
-            <p className="muted">Balance: {fmt(bal, doc.currency)} — partial payments are fine.</p>
+            <p className="muted">Balance: {fmt(bal, doc.currency)} — partial payments are fine.
+              {paidDetail.unknownFx && <span className="late"> A payment in another currency has no rate — counted at face value; edit it and add the rate.</span>}</p>
           </div>
         )}
 

@@ -96,10 +96,11 @@ export function docTotals(doc, taxRates) {
         net = amount - wh;
       } else if (inclusive) {
         lineTax = roundMinor(amount * pct / (100 + pct));
+        taxByRate.set(rate.id, (taxByRate.get(rate.id) || 0) + lineTax);
       } else {
         lineTax = roundMinor(amount * pct / 100);
+        taxByRate.set(rate.id, (taxByRate.get(rate.id) || 0) + lineTax);
       }
-      taxByRate.set(rate.id, (taxByRate.get(rate.id) || 0) + lineTax);
     }
     subtotal += amount;
     return { ...l, amountMinor: amount, taxMinor: lineTax, netMinor: net };
@@ -112,6 +113,19 @@ export function docTotals(doc, taxRates) {
   else if (d.mode === 'percent') discount = roundMinor(subtotal * (Number(d.percent) || 0) / 100);
 
   const discounted = subtotal - discount;
+
+  // Line-mode tax is computed on the discounted base too — otherwise the
+  // client pays tax on money they were never charged. Scale the per-rate
+  // totals (and each line's share) by discounted/subtotal.
+  if (taxMode === 'line' && discount > 0 && subtotal > 0) {
+    const ratio = discounted / subtotal;
+    for (const [rid, amt] of taxByRate) taxByRate.set(rid, roundMinor(amt * ratio));
+    withholding = roundMinor(withholding * ratio);
+    for (const l of outLines) {
+      l.taxMinor = roundMinor(l.taxMinor * ratio);
+      l.netMinor = l.amountMinor - (l.taxMinor || 0);
+    }
+  }
 
   // Invoice-level tax applies on the discounted base, proportionally per rate
   // (kept simple: invoice mode uses a single selected rate on the whole doc).
@@ -136,6 +150,9 @@ export function docTotals(doc, taxRates) {
   return {
     lines: outLines,
     subtotalMinor: subtotal,
+    // What "Subtotal" means on the printed document: for inclusive pricing
+    // the tax is inside the line prices, so the net is what belongs there.
+    displaySubtotalMinor: inclusive ? discounted - taxTotal : subtotal,
     discountMinor: discount,
     taxByRate,          // Map<rateId, minor>
     taxTotalMinor: taxTotal,
@@ -145,11 +162,32 @@ export function docTotals(doc, taxRates) {
   };
 }
 
-/** Sum of payments recorded against a document. */
+/**
+ * Payments recorded against a document, converted to the document's
+ * currency. A payment in another currency needs its fxRate (document
+ * units per payment unit — e.g. invoice in GBP, client paid USD:
+ * fxRate 0.80 means $1 = £0.80). Missing rate → counted at face value
+ * and flagged so the UI can warn.
+ */
+export function paidMinorDetailed(doc, payments) {
+  let total = 0;
+  let unknownFx = false;
+  for (const p of payments || []) {
+    if (p.documentId !== doc.id) continue;
+    const amt = p.amountMinor || 0;
+    if (!p.currency || p.currency === doc.currency) {
+      total += amt;
+    } else {
+      const rate = Number(p.fxRate);
+      if (Number.isFinite(rate) && rate > 0) total += roundMinor(amt * rate);
+      else { total += amt; unknownFx = true; }
+    }
+  }
+  return { totalMinor: total, unknownFx };
+}
+
 export function paidMinor(doc, payments) {
-  return (payments || [])
-    .filter(p => p.documentId === doc.id)
-    .reduce((s, p) => s + (p.amountMinor || 0), 0);
+  return paidMinorDetailed(doc, payments).totalMinor;
 }
 
 export function balanceMinor(doc, payments, taxRates) {

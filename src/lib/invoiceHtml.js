@@ -89,9 +89,10 @@ function linesTable(doc, totals, ratesById) {
 function totalsBlock(doc, totals, ratesById, paid) {
   const c = doc.currency;
   const rows = [];
-  rows.push(['Subtotal', fmt(totals.subtotalMinor, c)]);
+  rows.push(['Subtotal', fmt(totals.displaySubtotalMinor ?? totals.subtotalMinor, c)]);
   if (totals.discountMinor > 0) rows.push(['Discount', '−' + fmt(totals.discountMinor, c)]);
   for (const [rid, amt] of totals.taxByRate) {
+    if (!amt) continue;
     const r = ratesById.get(rid);
     rows.push([r ? r.name : 'Tax', fmt(amt, c)]);
   }
