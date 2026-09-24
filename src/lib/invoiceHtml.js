@@ -33,6 +33,26 @@ export const TEMPLATES = {
     font: '"Helvetica Neue", Arial, sans-serif', body: '12px', h1: '24px', accent: '#334155',
     layout: 'header-left', light: true
   },
+  compact: {
+    id: 'compact', name: 'Compact', margin: 14, free: false,
+    font: '"Segoe UI", Arial, sans-serif', body: '11px', h1: '22px', accent: '#0f172a',
+    layout: 'header-left', dense: true
+  },
+  mono: {
+    id: 'mono', name: 'Ledger', margin: 16, free: false,
+    font: '"Courier New", Courier, monospace', body: '12px', h1: '26px', accent: '#1e293b',
+    layout: 'header-left', ruled: true
+  },
+  boxed: {
+    id: 'boxed', name: 'Boxed', margin: 16, free: false,
+    font: '"Segoe UI", Arial, sans-serif', body: '12.5px', h1: '26px', accent: '#0f172a',
+    layout: 'metabox'
+  },
+  elegant: {
+    id: 'elegant', name: 'Elegant', margin: 20, free: false,
+    font: 'Georgia, "Times New Roman", serif', body: '12.5px', h1: '30px', accent: '#78350f',
+    layout: 'header-center', light: true, italic: true
+  },
   statement: {
     id: 'statement', name: 'Statement', margin: 16, free: false,
     font: '"Segoe UI", Arial, sans-serif', body: '12.5px', h1: '24px', accent: '#0f172a',
@@ -98,11 +118,15 @@ export function docBlocks(store, doc, payments) {
   const paid = paidMinor(doc, payments);
   const logo = biz.logoDataUrl ? `<img class="logo" src="${biz.logoDataUrl}" alt="">` : '';
 
+  const metaHtml = metaRows(doc).map(([k, v]) => `<div class="mrow"><span class="mk">${esc(k)}</span><span class="mv">${esc(v)}</span></div>`).join('');
   const header = tpl.layout === 'topband'
     ? `<div class="band"></div><div class="head"><div class="bparty">${logo}<h1 class="doctype">${TYPE_LABEL[doc.type] || 'INVOICE'}</h1><div class="bname">${esc(biz.name || '')}</div></div>
-       <div class="meta">${metaRows(doc).map(([k, v]) => `<div class="mrow"><span class="mk">${esc(k)}</span><span class="mv">${esc(v)}</span></div>`).join('')}</div></div>`
+       <div class="meta">${metaHtml}</div></div>`
+    : tpl.layout === 'metabox'
+    ? `<div class="head header-left"><div class="bparty">${logo}<h1 class="doctype">${TYPE_LABEL[doc.type] || 'INVOICE'}</h1><div class="bname">${esc(biz.name || '')}</div><div class="baddr">${esc(biz.address || '').replace(/\n/g, '<br>')}</div></div>
+       <div class="meta metabox">${metaHtml}</div></div>`
     : `<div class="head ${tpl.layout}"><div class="bparty">${logo}<h1 class="doctype">${TYPE_LABEL[doc.type] || 'INVOICE'}</h1><div class="bname">${esc(biz.name || '')}</div><div class="baddr">${esc(biz.address || '').replace(/\n/g, '<br>')}</div></div>
-       <div class="meta">${metaRows(doc).map(([k, v]) => `<div class="mrow"><span class="mk">${esc(k)}</span><span class="mv">${esc(v)}</span></div>`).join('')}</div></div>`;
+       <div class="meta">${metaHtml}</div></div>`;
 
   const parties = `<div class="parties">
     <div class="billto"><div class="ptag">Bill to</div><div class="pname">${esc(cli.name || 'Client')}</div>
@@ -170,6 +194,11 @@ export function cssFor(tpl, design = {}) {
   const band = tpl.layout === 'topband'
     ? `.band{background:${accent};height:18mm;margin:-${tpl.margin}mm -${tpl.margin}mm 8mm -${tpl.margin}mm;}
        .head .doctype{color:${accent};}` : '';
+  const variant = `
+  ${tpl.dense ? `.head{margin-bottom:5mm;} .parties{margin-bottom:5mm;} .lines th,.lines td{padding:1.4mm 2mm;} .lines{margin-bottom:4mm;} .totals td{padding:1mm 2mm;} .foot{margin-top:5mm;}` : ''}
+  ${tpl.ruled ? `.lines th{color:#1e293b;background:transparent;border-top:1.5px solid #1e293b;border-bottom:1.5px solid #1e293b;text-transform:none;letter-spacing:0.02em;} .lines td{border-bottom:1px solid #94a3b8;} .doctype{letter-spacing:0.14em;font-weight:700;} .mk{font-family:"Segoe UI",Arial,sans-serif;} .meta{border:1px solid #94a3b8;padding:3mm;}` : ''}
+  ${tpl.layout === 'metabox' ? `.metabox{background:${accent};padding:4mm 5mm;border-radius:2mm;} .metabox .mk{color:#cbd5e1;} .metabox .mv{color:#fff;} .metabox .mrow{border-bottom:0.5px solid rgba(255,255,255,0.15);padding:1mm 0;} .metabox .mrow:last-child{border-bottom:none;}` : ''}
+  ${tpl.layout === 'header-center' ? `.head{flex-direction:column;align-items:center;text-align:center;} .head .meta{text-align:center;display:flex;gap:8mm;justify-content:center;} .head .mrow{flex-direction:column;gap:0.5mm;} .doctype{font-style:italic;letter-spacing:0.02em;border-bottom:0.5px solid ${accent};padding-bottom:3mm;} .parties{justify-content:space-around;text-align:center;}` : ''}`;
   return `
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
@@ -200,5 +229,6 @@ export function cssFor(tpl, design = {}) {
   .notes { max-width: 100mm; }
   .taxid { margin-top: 4mm; }
   ${band}
+  ${variant}
   `;
 }
