@@ -1,7 +1,7 @@
 {
   "name": "billory",
   "productName": "Billory",
-  "description": "Offline invoicing for freelancers — invoice clients abroad, track what's unpaid, export clean PDFs. No account, no subscription.",
+  "description": "Offline invoicing for freelancers \u2014 invoice clients abroad, track what's unpaid, export clean PDFs. No account, no subscription.",
   "author": {
     "name": "Muhammad Shahbaz",
     "email": "mrshahbaznns@gmail.com"
@@ -21,7 +21,7 @@
   "build": {
     "appId": "com.shahbaz.billory",
     "productName": "Billory",
-    "copyright": "Copyright © 2026 Muhammad Shahbaz",
+    "copyright": "Copyright \u00a9 2026 Muhammad Shahbaz",
     "asar": true,
     "directories": {
       "buildResources": "build",
@@ -55,11 +55,13 @@
     "appx": {
       "applicationId": "Billory",
       "displayName": "Billory",
-      "identityName": "FROM_PARTNER_CENTER",
-      "publisher": "CN=FROM_PARTNER_CENTER",
-      "publisherDisplayName": "FROM_PARTNER_CENTER",
+      "identityName": "MuhammadShahbaz.Billory",
+      "publisher": "CN=82C2C857-730F-4239-B80D-4F1C7E03E8B4",
+      "publisherDisplayName": "Muhammad Shahbaz",
       "backgroundColor": "#0f172a",
-      "languages": ["en-US"]
+      "languages": [
+        "en-US"
+      ]
     },
     "nsis": {
       "oneClick": false,
